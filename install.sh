@@ -22,10 +22,11 @@ MACOS_LABEL="com.desktop-notify-server"
 MACOS_PLIST_NAME="${MACOS_LABEL}.plist"
 
 install_macos() {
-    local python_real launch_dir log_dir
+    local python_real launch_dir log_dir wrapper_bin
     python_real="$(find_python)"
     launch_dir="$HOME/Library/LaunchAgents"
     log_dir="$HOME/Library/Logs"
+    wrapper_bin="$SCRIPT_DIR/$SERVICE_NAME"
 
     echo "Installing $SERVICE_NAME (launchd)..."
     echo "  Python:  $python_real"
@@ -39,6 +40,16 @@ install_macos() {
 
     mkdir -p "$launch_dir" "$log_dir"
 
+    # Create a named wrapper script so macOS shows "desktop-notify-server"
+    # instead of "Python 3" in Background Items / Login Items.
+    cat > "$wrapper_bin" <<WRAPPER
+#!${python_real}
+import runpy, sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+runpy.run_module("notify_server", run_name="__main__", alter_sys=True)
+WRAPPER
+    chmod +x "$wrapper_bin"
+
     cat > "$launch_dir/$MACOS_PLIST_NAME" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -49,8 +60,7 @@ install_macos() {
 
     <key>ProgramArguments</key>
     <array>
-        <string>${python_real}</string>
-        <string>${SCRIPT_DIR}/notify_server.py</string>
+        <string>${wrapper_bin}</string>
     </array>
 
     <key>RunAtLoad</key>
@@ -89,6 +99,7 @@ EOF
 
 uninstall_macos() {
     local launch_dir="$HOME/Library/LaunchAgents"
+    local wrapper_bin="$SCRIPT_DIR/$SERVICE_NAME"
     echo "Uninstalling $SERVICE_NAME (launchd)..."
     if launchctl list "$MACOS_LABEL" &>/dev/null; then
         launchctl bootout "gui/$(id -u)/$MACOS_LABEL" 2>/dev/null || true
@@ -97,6 +108,10 @@ uninstall_macos() {
     if [[ -f "$launch_dir/$MACOS_PLIST_NAME" ]]; then
         rm "$launch_dir/$MACOS_PLIST_NAME"
         echo "  Plist removed."
+    fi
+    if [[ -f "$wrapper_bin" ]]; then
+        rm "$wrapper_bin"
+        echo "  Wrapper script removed."
     fi
     echo "Done."
 }

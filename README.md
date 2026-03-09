@@ -130,6 +130,19 @@ Health check endpoint.
 
 To change these for the installed service, edit the values in `install.sh` (or `install.ps1` on Windows) and re-run it.
 
+## macOS: Enabling Notifications
+
+macOS may (and probaby will) require you to explicitly grant notification permission to Script Editor before `osascript` notifications will appear. Without this step, notifications will silently fail.
+
+1. Open **Script Editor** (found in `/Applications/Utilities/Script Editor.app`)
+2. Paste the following and click the **Run** button (▶):
+   ```applescript
+   display notification "Test" with title "Test"
+   ```
+3. Go to **System Settings → Notifications → Script Editor** and make sure notifications are enabled (set alert style to **Alerts** or **Banners**)
+
+You only need to do this once. After that, all `osascript` notifications (including those from the server) will work.
+
 ## Connecting from Docker
 
 The server listens on `127.0.0.1:6789` on the host. There are several ways for a container to reach it.
