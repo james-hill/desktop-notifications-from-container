@@ -1,0 +1,13 @@
+[project]
+name = "desktop-notify-server"
+version = "0.1.0"
+description = "HTTP server that forwards notifications from Docker containers to the host desktop"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+desktop-notify-server = "notify_server:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
